@@ -1,0 +1,93 @@
+
+{
+  "name": "email-ester",
+  "version": "0.1.0",
+  "main": "public/electron.js",
+  "private": true,
+  "author": "Christian MacArthur",
+  "dependencies": {
+    "axios": "^0.27.2",
+    "concurrently": "^7.4.0",
+    "core-js": "^3.31.1",
+    "cors": "^2.8.5",
+    "daisyui": "^2.27.0",
+    "depcheck": "^1.4.3",
+    "dnsbl-lookup": "^0.3.3",
+    "dotenv": "^16.3.1",
+    "electron-dev": "^1.0.1",
+    "electron-is-dev": "^2.0.0",
+    "electron-packager": "^17.1.1",
+    "email-verify": "^0.2.1",
+    "express": "^4.18.2",
+    "firebase": "^9.23.0",
+    "firebase-admin": "^11.9.0",
+    "framer-motion": "^7.6.1",
+    "fs": "^0.0.1-security",
+    "https": "^1.0.0",
+    "imap": "^0.8.19",
+    "jsonwebtoken": "^9.0.0",
+    "macvendor": "^0.1.0",
+    "mongoose": "^6.11.2",
+    "nodemon": "^2.0.19",
+    "oui": "^12.0.61",
+    "path": "^0.12.7",
+    "radius": "^1.1.4",
+    "react": "^18.2.0",
+    "react-app-polyfill": "^3.0.0",
+    "react-dom": "^18.2.0",
+    "react-email-validator": "^1.0.2",
+    "react-ga4": "^2.1.0",
+    "react-helmet": "^6.1.0",
+    "react-icons": "^4.10.1",
+    "react-router-dom": "^6.3.0",
+    "react-scripts": "^5.0.1",
+    "truecallerjs": "^1.1.5",
+    "validator": "^13.9.0",
+    "wait-on": "^7.0.1",
+    "whoiser": "^1.17.1"
+  },
+  "scripts": {
+    "start": "concurrently \"react-scripts start\" \"nodemon ./src/server/connection.js\" ",
+    "build": "react-scripts build",
+    "electron:build": "electron-builder",
+    "dev": "concurrently -k \"npm start\" \"npm:electron\" \"nodemon ./src/server/connection.js\"",
+    "test": "jest --watchAll --coverage",
+    "eject": "react-scripts eject",
+    "electron": "wait-on tcp:3000 && electron .",
+    "upload": "npm run build && tar -zcvf build.tar.gz build/ && scp build.tar.gz root@65.21.165.114:/var/www/html/email-tester/ && rm build.tar.gz",
+    "push": "git add . && git commit -am . && git push origin main"
+
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "ie 11",
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@babel/preset-env": "^7.22.6",
+    "@babel/preset-react": "^7.22.5",
+    "@types/jest": "^29.5.2",
+    "autoprefixer": "^10.4.8",
+    "electron": "^25.2.0",
+    "electron-builder": "^24.4.0",
+    "jest": "^27.5.1",
+    "jest-express": "^1.12.0",
+    "postcss": "^8.4.16",
+    "tailwindcss": "^3.3.2"
+  }
+}

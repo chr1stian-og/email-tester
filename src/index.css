@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "dosis";
+  src: url("./assets/Dosis-SemiBold.ttf");
+}
+
+body {
+  font-family: "dosis";
+}
+
+header {
+  font-family: "dosis";
+}
+
+nav {
+  font-family: "dosis";
+}
+
+footer {
+  font-family: "dosis";
+}
+
+h1 {
+  color: #636363;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.App {
+  text-align: center;
+  min-width: 600px;
+  max-width: 600px;
+  min-height: 600px;
+  max-height: 600px;
+}

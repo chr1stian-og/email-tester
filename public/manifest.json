@@ -1,0 +1,18 @@
+{
+  "name": "clubnet-email-tester",
+  "short_name": "email-tester",
+  "icons": {
+    "16": "favicon.ico",
+    "48": "logo192.png",
+    "128": "logo512.png"
+  },
+  "permissions": [],
+  "description": "An email tester for clubnet",
+  "version": "0.0.1",
+  "manifest_version": 3,
+  "action": {
+    "default_icon": "favicon.ico",
+    "default_title": "clubnet-email-tester",
+    "default_popup": "index.html"
+  }
+}
