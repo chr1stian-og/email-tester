@@ -9,7 +9,9 @@
 
 # testing
 /coverage
-
+/src/serber/firebase-credentials.json
+/components/firebase.js/
+/src/server/firebase2.js/
 # production
 /build
 

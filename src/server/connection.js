@@ -2,12 +2,13 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const truecallerjs = require("truecallerjs");
-const whoiser = require("whoiser");
+// const whoiser = require("whoiser");
 const oui = require("oui");
 const lookup = require("dnsbl-lookup");
 const verifier = require("email-verify");
 const infoCodes = verifier.verifyCodes;
 const jwt = require("jsonwebtoken");
+const compression = require("compression");
 const firebaseAuth = require("firebase-admin");
 const credentials = require("./firebase-credentials.json");
 const { auth } = require("./firebase2.js");
@@ -16,18 +17,9 @@ const axios = require("axios");
 const https = require("https");
 const fs = require("fs");
 
-//Firebase
-firebaseAuth.initializeApp({
-  credential: firebaseAuth.credential.cert(credentials),
-});
-
-//express
-const app = express();
-app.use(express.json({ limit: "25mb" }));
-app.use(express.urlencoded({ limit: "25mb", extended: true }));
-app.use(cors());
-
 //global variabkes
+const ALLOWED_ORIGIN = process.env.REACT_APP_LOCAL_API;
+// const ALLOWED_ORIGIN = "https://email.christianmacarthur.com";
 const PORT = process.env.PORT || 3001;
 
 let Imap = require("imap"),
@@ -35,7 +27,26 @@ let Imap = require("imap"),
 
 let TOKEN = "no token";
 
-//ssl
+//Firebase
+firebaseAuth.initializeApp({
+  credential: firebaseAuth.credential.cert(credentials),
+});
+
+//express
+const app = express();
+app.use(compression());
+app.use(express.json({ limit: "25mb" }));
+app.use(express.urlencoded({ limit: "25mb", extended: true }));
+app.use(
+  cors({
+    origin: ALLOWED_ORIGIN,
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
+
+//ssl listener
 const ssl = {
   key: fs.readFileSync(
     "/etc/letsencrypt/live/christianmacarthur.com/privkey.pem"
@@ -46,11 +57,11 @@ const ssl = {
   ca: fs.readFileSync("/etc/letsencrypt/live/christianmacarthur.com/chain.pem"),
 };
 
-// listener
 https.createServer(ssl, app).listen(PORT, () => {
   console.log(`Secure server running on port ${PORT}...`);
 });
 
+// normal listener
 // try {
 //   app.listen(PORT, () => console.log(`Backend on port ${PORT}...`));
 // } catch (e) {
@@ -84,6 +95,15 @@ function sanitizePhoneNumber(phoneNumber) {
     throw new Error("Invalid phone number");
   }
   return phoneNumber;
+}
+
+function sanitizeEmail(email) {
+  email = email.trim();
+  email = email.replace(/^(mailto:)?/i, "");
+  email = email.replace(/[^a-z0-9@.\-]/gi, "");
+  email = email.toLowerCase();
+
+  return email;
 }
 
 function timeoutMiddleware(req, res, next) {
@@ -418,6 +438,60 @@ app.post("/api/testEmail", async (req, res) => {
   }
 });
 
+app.post("/api/testEmailList", async (req, res) => {
+  const contact = JSON.stringify(req.body) || "";
+  const email = contact
+    .replace("{", "")
+    .replace("}", "")
+    .replace('"', "")
+    .replace(":", "")
+    .replace(" ", "")
+    .replace(";", "")
+    .replace("\n", "")
+    .replace("\r", "")
+    .replace('"', "")
+    .replace(/"/g, "")
+    .trim();
+  console.log("testing", email, "...");
+  try {
+    await verifier.verify(email, function (err, info) {
+      if (info.success) {
+        sendResponse(res, 200, "The email is valid");
+        console.log("Terminating, Success (T/F): " + info.success);
+      } else {
+        let result = [];
+        if (info.code === infoCodes.finishedVerification) {
+          result.push(": Email not found");
+        }
+        if (info.code === infoCodes.invalidEmailStructure) {
+          result.push(": Invalid structure");
+        }
+        if (info.code === infoCodes.domainNotFound) {
+          result.push(": Domain not found");
+        }
+        if (info.code === infoCodes.noMxRecords) {
+          result.push(": No MX Records for this domain");
+        }
+        if (info.code === infoCodes.SMTPConnectionTimeout) {
+          result.push(": SMTP connection timeout");
+        }
+        sendResponse(
+          res,
+          200,
+          "Invalid email",
+          result !== [""] ? result : ": User not found" || info.code
+        );
+      }
+    });
+  } catch (e) {
+    sendResponse(
+      res,
+      200,
+      e.message ? e.message : "An error occurred" + e.message
+    );
+  }
+});
+
 app.post("/api/testNumber", async (req, res) => {
   const { contact } = req.body || "";
   console.log("Testing:", contact, "...");
@@ -431,7 +505,7 @@ app.post("/api/testNumber", async (req, res) => {
     const resp = await truecallerjs
       .searchNumber(searchData)
       .then((response) => {
-        const name = resp.data[0]?.name || "No registry";
+        const name = resp.data[0].name || "No registry";
         sendResponse(res, 200, name);
       })
       .catch((e) => {

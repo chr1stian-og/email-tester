@@ -52,19 +52,25 @@ function Navbar() {
           setIsLoading(false);
           callDialog("error", err.response.data.error);
         });
-    } catch (e) {
-      console.log(e);
+    } catch (err) {
       setIsLoading(false);
       callDialog("error", "Error while trying to login, try again");
+      console.log(err.message);
     }
   };
+
+  let dialogTimeout;
+
   const callDialog = (type, message) => {
+    if (dialogTimeout) {
+      clearTimeout(dialogTimeout);
+    }
     setShowDialog({
       status: true,
       message: message,
-      type: type,
+      type: type ? type : "success",
     });
-    setTimeout(() => {
+    dialogTimeout = setTimeout(() => {
       setShowDialog({ status: false, message: "", type: "" });
     }, 3000);
   };
@@ -107,7 +113,8 @@ function Navbar() {
           <span className="font-bold">{showDialog.message}</span>
         </div>
       </div>
-      <nav className="bg-white shadow md:flex md:items-center md:justify-between py-2 px-4 z-10">
+      {/* <nav className="bg-white shadow sm:flex sm:items-center sm:justify-between py-2 px-4 z-10"> */}
+      <nav className="bg-white shadow flex items-center justify-between py-2 px-4 z-10">
         <div className="flex justify-between items-center">
           <span className="text-lg cursor-pointer">
             <img
@@ -116,37 +123,37 @@ function Navbar() {
               src={clubnetlogo}
             />
           </span>
-          <h1 className="text-lg cursor-pointer md:hidden block  ">
+          <h1 className="text-lg cursor-pointer hidden  ">
             <p name="menu" id="menu" onClick={showMenu}>
               <GiHamburgerMenu />{" "}
             </p>
           </h1>
         </div>
-        <ul className="md:flex md:items-center p-4 sm:p-4 gap-4 sm:px-4 sm:gap-10 md:gap-4 md:z-auto md:static absolute bg-white border-2 rounded-md border-[#b05b5b] sm:border-[#f04088] md:border-transparent w-[250px] sm:inset-x-2/4 inset-x-2/4 md:w-auto md:py-0 md:pl-0 md:opacity-100 opacity-100 top-[-400px] transition-all duration-150">
+        {/* <ul className="md:flex md:items-center p-4 sm:p-4 gap-4 sm:px-4 sm:gap-10 md:gap-4 md:z-auto md:static absolute bg-white border-2 rounded-md border-[#b05b5b] sm:border-[#f04088] md:border-transparent w-[250px] sm:inset-x-2/4 inset-x-2/4 md:w-auto md:py-0 md:pl-0 md:opacity-100 opacity-100 top-[-400px] transition-all duration-150"> */}
+        <ul className="flex items-center p-4 gap-4 x-4 z-auto static  bg-white border-2 rounded-md border-[#b05b5b] border-transparent inset-x-2/4 w-auto py-0 pl-4 opacity-100 transition-all duration-150">
           <li className="bg-[#ebebeb] duration-300 sm:px-4 rounded-lg w-fit px-2 cursor-pointer hover:bg-[#b7b7b7]">
             <Link to="/home">
               <h1
                 onClick={closeNavbar}
-                className="my-4 md:my-0 font-semibold duration-150 text-lg"
+                // className="my-4 md:my-0 font-semibold duration-150 text-lg"
+                className="my-0 font-semibold duration-150 text-lg"
               >
                 Single
               </h1>
             </Link>
           </li>
           <li className="bg-[#ebebeb] duration-300 sm:px-4 rounded-lg w-fit px-2 cursor-pointer hover:bg-[#b7b7b7]">
-            {/* <Link to="/multiple"> */}
-            <h1
-              onClick={closeNavbar}
-              className="my-4 md:my-0  font-semibold duration-150 text-lg"
-            >
-              Multiple
-            </h1>
-            {/* </Link> */}
+            <Link to="/multiple">
+              <h1
+                onClick={closeNavbar}
+                // className="my-4 md:my-0  font-semibold duration-150 text-lg"
+                className="my-0  font-semibold duration-150 text-lg"
+              >
+                Multiple
+              </h1>
+            </Link>
           </li>
           <li
-            // onClick={() =>
-            //   window.open("https://email.christianmacarthur.com/", "_self")
-            // }
             onClick={login}
             className={` ${
               !isLoading ? "bg-[#ebebeb] hover:bg-[#b7b7b7]" : "block"
@@ -155,7 +162,8 @@ function Navbar() {
             <h1
               id="test-button"
               type="submit"
-              className={`  my-4 md:my-0 font-semibold duration-150 text-lg  transition-all`}
+              // className={`  my-4 md:my-0 font-semibold duration-150 text-lg  transition-all`}
+              className={`my-0 font-semibold duration-150 text-lg  transition-all`}
             >
               <span className={`${!isLoading ? "block" : "hidden"}`}>
                 Login
@@ -168,47 +176,6 @@ function Navbar() {
               />
             </h1>
           </li>
-
-          {/* <li className="bg-[#ebebeb] duration-300 sm:px-4 rounded-lg w-fit px-2 cursor-pointer hover:bg-[#b7b7b7]">
-            <Link to="/checkList">
-              <h1
-                onClick={closeNavbar}
-                className=" my-4 md:my-0  font-semibold duration-150 text-lg"
-              >
-                Direct
-              </h1>
-            </Link>
-          </li> */}
-          {/* <li className="duration-300 ml-[-8px] sm:px-4 rounded-lg w-fit px-2 cursor-pointer hover:bg-[#b7b7b7]">
-            <Link to="/checkList">
-              <h1
-                onClick={logout}
-                className=" my-4 md:my-0 text-[#ec1554] font-semibold duration-150 text-lg"
-              >
-                Logout
-              </h1>
-            </Link>
-          </li> */}
-          {/* <li>
-            <Link to="/settings">
-              <h1
-                onClick={closeNavbar}
-                className="hover:text-black my-4 md:my-0  font-semibold duration-150 text-lg"
-              >
-                Settings
-              </h1>
-            </Link>
-          </li>
-          <li>
-            <Link to="/login">
-              <h1
-                onClick={closeNavbar}
-                className="hover:text-black my-4 md:my-0  font-semibold duration-150 text-lg"
-              >
-                Logout
-              </h1>
-            </Link>
-          </li> */}
         </ul>
       </nav>
     </>

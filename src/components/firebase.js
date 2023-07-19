@@ -3,12 +3,12 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "@firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  apiKey: "AIzaSyBe8fOKbyEMK3xd0qMWMSYIAzV89iplYbI",
   authDomain: "clubnet-email-tester.firebaseapp.com",
   projectId: "clubnet-email-tester",
   storageBucket: "clubnet-email-tester.appspot.com",
   messagingSenderId: "338443058534",
-  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+  appId: "1:338443058534:web:c039b43be73da09ddc5ca7",
 };
 
 const app_auth = initializeApp(firebaseConfig);
