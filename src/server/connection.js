@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const truecallerjs = require("truecallerjs");
-// const whoiser = require("whoiser");
+const whoiser = require("whoiser");
 const oui = require("oui");
 const lookup = require("dnsbl-lookup");
 const verifier = require("email-verify");
@@ -13,68 +13,88 @@ const firebaseAuth = require("firebase-admin");
 const credentials = require("./firebase-credentials.json");
 const { auth } = require("./firebase2.js");
 const { signInWithEmailAndPassword } = require("firebase/auth");
+const winston = require("winston");
 const axios = require("axios");
 const https = require("https");
 const fs = require("fs");
+const { Configuration, OpenAIApi } = require("openai");
 
-//global variabkes
+//Glabal variables
+const app = express();
+
+let TOKEN;
+
+const openai_config = new Configuration({
+  apiKey: "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",
+});
+const openai = new OpenAIApi(openai_config);
+
+firebaseAuth.initializeApp({
+  credential: firebaseAuth.credential.cert(credentials),
+});
+
 const ALLOWED_ORIGIN = process.env.REACT_APP_LOCAL_API;
-// const ALLOWED_ORIGIN = "https://email.christianmacarthur.com";
 const PORT = process.env.PORT || 3001;
 
 let Imap = require("imap"),
   inspect = require("util").inspect;
 
-let TOKEN = "no token";
+const LOG_PATH = "/var/log/email-tester/connection.log";
 
-//Firebase
-firebaseAuth.initializeApp({
-  credential: firebaseAuth.credential.cert(credentials),
+const LOGGER = winston.createLogger({
+  level: "info",
+  format: winston.format.combine(
+    winston.format.colorize(),
+    winston.format.simple()
+  ),
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: LOG_PATH }),
+  ],
 });
 
 //express
-const app = express();
 app.use(compression());
-app.use(express.json({ limit: "25mb" }));
-app.use(express.urlencoded({ limit: "25mb", extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: ALLOWED_ORIGIN,
+    // origin: ALLOWED_ORIGIN,
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
 
-//ssl listener
-const ssl = {
-  key: fs.readFileSync(
-    "/etc/letsencrypt/live/christianmacarthur.com/privkey.pem"
-  ),
-  cert: fs.readFileSync(
-    "/etc/letsencrypt/live/christianmacarthur.com/cert.pem"
-  ),
-  ca: fs.readFileSync("/etc/letsencrypt/live/christianmacarthur.com/chain.pem"),
-};
+//secure server
+// const ssl = {
+//   key: fs.readFileSync(
+//     "/etc/letsencrypt/live/christianmacarthur.com/privkey.pem"
+//   ),
+//   cert: fs.readFileSync(
+//     "/etc/letsencrypt/live/christianmacarthur.com/cert.pem"
+//   ),
+//   ca: fs.readFileSync("/etc/letsencrypt/live/christianmacarthur.com/chain.pem"),
+// };
 
-https.createServer(ssl, app).listen(PORT, () => {
-  console.log(`Secure server running on port ${PORT}...`);
-});
+// https.createServer(ssl, app).listen(PORT, () => {
+//   LOGGER.info(`Secure server running on port ${PORT}...`);
+// });
 
-// normal listener
-// try {
-//   app.listen(PORT, () => console.log(`Backend on port ${PORT}...`));
-// } catch (e) {
-//   console.log(
-//     "An error ocurred with the server. Read the error log for more details.",
-//     e.message
-//   );
-// }
+//unsecure server
+try {
+  app.listen(PORT, () => LOGGER.info(`Backend on port ${PORT}...`));
+} catch (e) {
+  LOGGER.error(
+    "An error ocurred with the server. Read the error log for more details.",
+    e.message
+  );
+}
 
 //Functions
 function sendResponse(res, status, text, err) {
   !res.headersSent &&
-    (console.log("Sending response:", text + (err ? " " + err : "")),
+    (LOGGER.info("Sending response:", text + (err ? " " + err : "")),
     res.status(status).json(text + (err ? " " + err : "")));
 }
 
@@ -133,11 +153,15 @@ const authenticateToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (TOKEN === null) return res.json("Access denied, Log in first");
 
-  jwt.verify(TOKEN, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-    if (err) return res.json("Token is invalid, Log in.");
-    req.user = user;
-    next();
-  });
+  jwt.verify(
+    TOKEN || authHeader,
+    process.env.ACCESS_TOKEN_SECRET,
+    (err, user) => {
+      if (err) return res.json("Token is invalid, Log in.");
+      req.user = user;
+      next();
+    }
+  );
 };
 
 const testToken = (res) => {
@@ -148,10 +172,10 @@ const testToken = (res) => {
       },
     })
     .then((response) => {
-      return res.json(response.data);
+      return res.status(200).json(response.data);
     })
     .catch((error) => {
-      console.error(error);
+      LOGGER.error(error);
       return res.status(403).json("Token is invalid");
     });
 };
@@ -169,6 +193,20 @@ app.get("/api/testFirebase", (req, res) => {
 
 app.get("/api/token", (req, res) => {
   testToken(res);
+});
+
+app.get("/api/ai", async (req, res) => {
+  try {
+    const response = await openai.createCompletion({
+      model: "text-davinci-003",
+      prompt: "Hi gpt3, how are you?",
+      maxTokens: 100,
+      temperature: 0.5,
+    });
+    res.json({ reply: response });
+  } catch (e) {
+    LOGGER.error(e.message);
+  }
 });
 
 app.get("/api/getCounters", (req, res) => {
@@ -192,7 +230,7 @@ app.get("/api/testToken", authenticateToken, (req, res) => {
   res.json("Token is valid");
 });
 
-app.post("/api/signin", async (req, res) => {
+app.post("/api/signup", async (req, res) => {
   const { email, password } = req.body || {
     email: "christian@gmail.com",
     password: "christian",
@@ -205,10 +243,10 @@ app.post("/api/signin", async (req, res) => {
       emailVerified: true,
       disabled: false,
     });
-    return res.json(userResponse);
+    return res.status(200).json(userResponse);
   } catch (e) {
-    console.log(e);
-    return res.json(e.message);
+    LOGGER.error(e);
+    return res.status(500).json(e.message);
   }
 });
 
@@ -263,7 +301,7 @@ app.get("/api/getEmails", (req, res) => {
     try {
       imap.openBox("Inbox", false, cb);
     } catch (err) {
-      console.log("Erro chamando a funcão openBox()");
+      LOGGER.error("Erro chamando a funcão openBox()");
     }
   }
 
@@ -291,9 +329,9 @@ app.get("/api/getEmails", (req, res) => {
                   buffer += chunk.toString();
                   try {
                     res.json(buffer);
-                    console.log(buffer);
+                    LOGGER.info(buffer);
                   } catch (err) {
-                    console.log("Erro while fetching emails", err);
+                    LOGGER.error("Erro while fetching emails", err);
                   }
                 });
                 stream.once("end", function () {
@@ -301,9 +339,9 @@ app.get("/api/getEmails", (req, res) => {
                     let uid = attrs.uid;
                     imap.addFlags(uid, ["\\Seen"], function (err) {
                       if (err) {
-                        console.log(err);
+                        LOGGER.error(err);
                       } else {
-                        console.log("Marked as read!`");
+                        LOGGER.info("Marked as read!`");
                       }
                     });
                   });
@@ -315,7 +353,7 @@ app.get("/api/getEmails", (req, res) => {
             });
           } catch (errorWhileFetching) {
             res.json(errorWhileFetching.message);
-            console.log(errorWhileFetching.message);
+            LOGGER.error(errorWhileFetching.message);
             imap.end();
           }
         }
@@ -328,7 +366,7 @@ app.post("/api/getDomainInfo", async (req, res) => {
   const { contact } = req.body || "";
   try {
     let domain = sanitizeDomain(JSON.stringify(contact) || "");
-    console.log("checking the info for this domain: ", domain, "...");
+    LOGGER.info("checking the info for this domain: ", domain, "...");
 
     try {
       const domainInfo = await whoiser(domain);
@@ -351,13 +389,13 @@ app.post("/api/getDomainInfo", async (req, res) => {
 
 app.post("/api/getMacInfo", async (req, res) => {
   const { contact } = req.body || "";
-  console.log("Getting info about : ", contact, "...");
+  LOGGER.info("Getting info about : ", contact, "...");
 
   try {
-    const result = oui(macString);
+    const result = oui(contact);
     if (result) {
-      console.log(oui(macString));
-      res.json(oui(macString).split(" ")[0]);
+      LOGGER.info(oui(contact));
+      res.json(oui(contact).split(" ")[0]);
     } else {
       res.json("No data associated with this device");
     }
@@ -365,6 +403,7 @@ app.post("/api/getMacInfo", async (req, res) => {
     res
       .status(500)
       .json({ message: "Error while getting Mac info", result: "error" });
+    LOGGER.error(e.message);
   }
 });
 
@@ -378,10 +417,11 @@ app.post("/api/getListings", async (req, res) => {
     let testCounter = 0;
     await dnsbl.on("data", function (result, blocklist) {
       testCounter++;
-      console.log(result.status + " in " + blocklist.zone);
+      LOGGER.info(result.status + " in " + blocklist.zone);
     });
     dnsbl.on("done", function () {
-      res.json(
+      testCounter++;
+      return res.json(
         "Ran " +
           testCounter +
           " tests || " +
@@ -390,10 +430,9 @@ app.post("/api/getListings", async (req, res) => {
           " lists || \n " +
           JSON.stringify(blacklistsCounter).replace("[", "").replace("]", "")
       );
-      testCounter++;
     });
   } catch (e) {
-    console.log(e.message);
+    LOGGER.error(e.message);
     res
       .status(500)
       .json({ message: "Error while getting listing", result: "error" });
@@ -402,12 +441,12 @@ app.post("/api/getListings", async (req, res) => {
 
 app.post("/api/testEmail", async (req, res) => {
   const { contact } = req.body;
-  console.log("testing", contact, "...");
+  LOGGER.info("testing", contact, "...");
   try {
     await verifier.verify(contact, function (err, info) {
       if (info.success) {
         sendResponse(res, 200, "The email is valid");
-        console.log("Terminating, Success (T/F): " + info.success);
+        LOGGER.info("Terminating, Success (T/F): " + info.success);
       } else {
         let result = [];
         if (info.code === infoCodes.finishedVerification) {
@@ -435,6 +474,7 @@ app.post("/api/testEmail", async (req, res) => {
     });
   } catch (e) {
     sendResponse(res, 500, "An error occurred: " + e.message);
+    LOGGER.error(e.message);
   }
 });
 
@@ -452,12 +492,12 @@ app.post("/api/testEmailList", async (req, res) => {
     .replace('"', "")
     .replace(/"/g, "")
     .trim();
-  console.log("testing", email, "...");
+  LOGGER.info("testing", email, "...");
   try {
     await verifier.verify(email, function (err, info) {
       if (info.success) {
         sendResponse(res, 200, "The email is valid");
-        console.log("Terminating, Success (T/F): " + info.success);
+        LOGGER.info("Terminating, Success (T/F): " + info.success);
       } else {
         let result = [];
         if (info.code === infoCodes.finishedVerification) {
@@ -489,12 +529,13 @@ app.post("/api/testEmailList", async (req, res) => {
       200,
       e.message ? e.message : "An error occurred" + e.message
     );
+    LOGGER.error(e.message);
   }
 });
 
 app.post("/api/testNumber", async (req, res) => {
   const { contact } = req.body || "";
-  console.log("Testing:", contact, "...");
+  LOGGER.info("Testing:", contact, "...");
   try {
     const searchData = {
       number: sanitizePhoneNumber(contact),
@@ -513,6 +554,7 @@ app.post("/api/testNumber", async (req, res) => {
       });
   } catch (e) {
     sendResponse(res, 200, e.message);
+    LOGGER.error(e.message);
   }
 });
 
@@ -528,7 +570,7 @@ app.post("/api/testPass", async (req, res) => {
     .replace('"""', "")
     .replace(" ", "")
     .replace(/\s+/g, "");
-  console.log("testing", passString, "...");
+  LOGGER.info("testing", passString, "...");
 });
 
 // let imap = new Imap({
@@ -549,7 +591,7 @@ app.post("/api/testPass", async (req, res) => {
 //   });
 //   imap.connect();
 //   process.on("uncaughtException", (err) => {
-//     console.log("uncaughtException");
+//     LOGGER.info("uncaughtException");
 //     process.exit(0);
 //   });
 // };

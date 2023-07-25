@@ -118,7 +118,9 @@ function Navbar() {
         <div className="flex justify-between items-center">
           <span className="text-lg cursor-pointer">
             <img
-              onClick={() => window.open("http://localhost:3000/", "_self")}
+              onClick={() =>
+                window.open("https://email.christianmacarthur.com/", "_self")
+              }
               className="max-w-[100px] font-semibold  duration-150"
               src={clubnetlogo}
             />

@@ -3,17 +3,18 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import validator from "validator";
 import GaEventTracker from "../components/GaEventTracker";
+import DOMPurify from "dompurify";
+
 const currentYear = new Date().getFullYear();
 
 //Global variables
 const loading = require("../assets/loading.gif");
-const api = axios.create({ baseURL: process.env.REACT_APP_REMOTE_API });
+const api = axios.create({ baseURL: process.env.REACT_APP_LOCAL_API });
 const gaEventTracker = GaEventTracker("Home Page");
 let dialogTimeout;
 
 //main function
 function Home() {
-  
   //States
   const [token, setToken] = useState("");
 
@@ -36,8 +37,8 @@ function Home() {
   const abortSignal = controller.signal;
 
   const [selectedOptionIndex, setSelectedOptionIndex] = useState(0);
-  const options = ["Email"];
-  // const options = ["Email", "Phone Number", "Domain", "MAC", "Blacklist"];
+  // const options = ["Email"];
+  const options = ["Email", "Phone Number", "Domain", "MAC", "Blacklist"];
 
   const [contactToTest, setContactToTest] = useState({ contact: "" });
   const [contactType, setContactType] = useState("email");
@@ -174,22 +175,28 @@ function Home() {
   }
 
   function testContact(contactToTest) {
-    if (contactType === "email") {
-      testEmail(contactToTest);
-    } else if (contactType === "phone") {
-      testPhone(contactToTest);
-    } else if (contactType === "domain") {
-      testDomain(contactToTest);
-    } else if (contactType === "mac") {
-      testMac(contactToTest);
-    } else if (contactType === "blacklist") {
-      testLists(contactToTest);
+    if (
+      DOMPurify.sanitize(contactToTest, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
+    ) {
+      if (contactType === "email") {
+        testEmail(contactToTest);
+      } else if (contactType === "phone") {
+        testPhone(contactToTest);
+      } else if (contactType === "domain") {
+        testDomain(contactToTest);
+      } else if (contactType === "mac") {
+        testMac(contactToTest);
+      } else if (contactType === "blacklist") {
+        testLists(contactToTest);
+      } else {
+        callDialog(
+          "error",
+          "We cannot test that yet. Try other options.",
+          document.getElementById("input-contact").type
+        );
+      }
     } else {
-      callDialog(
-        "error",
-        "We cannot test that yet. Try other options.",
-        document.getElementById("input-contact").type
-      );
+      return callDialog("error", "The input data is not valid");
     }
   }
 
