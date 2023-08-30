@@ -94,7 +94,7 @@ try {
 //Functions
 function sendResponse(res, status, text, err) {
   !res.headersSent &&
-    (LOGGER.info("Sending response:", text + (err ? " " + err : "")),
+    (console.log("Sending response:", text + (err ? " " + err : "")),
     res.status(status).json(text + (err ? " " + err : "")));
 }
 
@@ -395,9 +395,9 @@ app.post("/api/getMacInfo", async (req, res) => {
     const result = oui(contact);
     if (result) {
       LOGGER.info(oui(contact));
-      res.json(oui(contact).split(" ")[0]);
+      res.status(200).json(oui(contact).split(" ")[0]);
     } else {
-      res.json("No data associated with this device");
+      res.status(200).json("No data associated with this device");
     }
   } catch (e) {
     res
@@ -410,15 +410,22 @@ app.post("/api/getMacInfo", async (req, res) => {
 app.post("/api/getListings", async (req, res) => {
   const { contact } = req.body || "";
   let domain = sanitizeDomain(JSON.stringify(contact) || "");
+
   try {
     let dnsbl = new lookup.dnsbl(domain);
-    dnsbl.on("error", function (error, blocklist) {});
     let blacklistsCounter = [];
     let testCounter = 0;
+
+    dnsbl.on("error", function (error, blocklist) {
+      LOGGER.error(error);
+      // return res.status(501).json("Internal error");
+    });
+
     await dnsbl.on("data", function (result, blocklist) {
       testCounter++;
       LOGGER.info(result.status + " in " + blocklist.zone);
     });
+
     dnsbl.on("done", function () {
       testCounter++;
       return res.json(
@@ -442,6 +449,7 @@ app.post("/api/getListings", async (req, res) => {
 app.post("/api/testEmail", async (req, res) => {
   const { contact } = req.body;
   LOGGER.info("testing", contact, "...");
+  console.log("testing ... " + contact);
   try {
     await verifier.verify(contact, function (err, info) {
       if (info.success) {
@@ -534,32 +542,28 @@ app.post("/api/testEmailList", async (req, res) => {
 });
 
 app.post("/api/testNumber", async (req, res) => {
-  const { contact } = req.body || "";
-  LOGGER.info("Testing:", contact, "...");
+  const { contact } = req.body;
+  LOGGER.info("Testing: ", contact, "...");
   try {
     const searchData = {
       number: sanitizePhoneNumber(contact),
       countryCode: "MZ",
-      installationId: process.env.TRUECALLER_ID || "truecallerjs-test",
+      installationId: process.env.TRUECALLER_ID,
       output: "JSON",
     };
-    const resp = await truecallerjs
-      .searchNumber(searchData)
-      .then((response) => {
-        const name = resp.data[0].name || "No registry";
-        sendResponse(res, 200, name);
-      })
-      .catch((e) => {
-        sendResponse(res, 500, "Error while testing this number", e.message);
-      });
+    const resp = await truecallerjs.searchNumber(searchData);
+    console.log(searchData);
+    const name = resp.data[0].name || "No registry";
+    console.log(resp);
+    sendResponse(res, 200, name);
   } catch (e) {
-    sendResponse(res, 200, e.message);
+    sendResponse(res, 500, "Error while testing this number", e.message);
     LOGGER.error(e.message);
   }
 });
 
 app.post("/api/testPass", async (req, res) => {
-  const email = sanitizePhoneNumber(JSON.stringify(req.body.emailList) || "");
+  const email = sanitizeEmail(JSON.stringify(req.body.emailList) || "");
   let password = req.body.password || " ";
   let passString = JSON.stringify(password)
     .trim()

@@ -209,16 +209,20 @@ function Home() {
           const timeoutPromise = new Promise((resolve, reject) => {
             setTimeout(() => {
               reject(new Error("Timeout occurred"));
-            }, 15000);
+            }, 5000);
           });
           Promise.race([
             await api.post("/getDomainInfo", contactToTest, {
               signal: abortSignal,
+              headers: {
+                authorization: token,
+              },
             }),
             timeoutPromise,
           ])
             .then((resp) => {
               setResult(resp.data);
+              console.log(resp.data);
               setIsLoading(false);
             })
             .catch((err) => {
@@ -253,7 +257,7 @@ function Home() {
         const timeoutPromise = new Promise((resolve, reject) => {
           setTimeout(() => {
             reject(new Error("Timeout occurred"));
-          }, 10000);
+          }, 5000);
         });
         Promise.race([
           api.post("/getMacInfo", contactToTest, { signal: abortSignal }),
@@ -265,13 +269,14 @@ function Home() {
           })
           .catch((err) => {
             setIsLoading(false);
-            if (err.message === "Timeout occurred")
+            if (err.message === "Timeout occurred") {
               document.getElementById("test-result").innerText =
                 "Timeout occurred while waiting for a response";
+            }
             console.log(err.message);
           })
           .finally(() => {
-            setAbortController(null);
+            return setAbortController(null);
           });
       }
     } catch (err) {
@@ -296,8 +301,6 @@ function Home() {
               reject(new Error("Timeout occurred"));
             }, 60000);
           });
-
-          // Send the API request and handle the response or timeout
           Promise.race([
             api.post("/getListings", contactToTest, { signal: abortSignal }),
             timeoutPromise,
@@ -314,7 +317,7 @@ function Home() {
               console.log(err.message);
             })
             .finally(() => {
-              setAbortController(null);
+              return setAbortController(null);
             });
         }
       } catch (err) {
@@ -359,7 +362,7 @@ function Home() {
               console.log(err.message);
             })
             .finally(() => {
-              setAbortController(null);
+              return setAbortController(null);
             });
         }
       } catch (err) {
@@ -390,9 +393,6 @@ function Home() {
         Promise.race([
           api.post("/testEmail", contactToTest, {
             signal: abortSignal,
-            headers: {
-              authorization: token,
-            },
           }),
           timeoutPromise,
         ])
@@ -407,7 +407,7 @@ function Home() {
                 "Timeout occurred while waiting for a response";
           })
           .finally(() => {
-            setAbortController(null);
+            return setAbortController(null);
           });
       }
     } catch (err) {
@@ -515,10 +515,15 @@ function Home() {
           id="test-result"
           className={`
         ${
-          result !== "The email is valid" || result === "No registry"
+          result === "The email is valid"
+            ? "text-green-400"
+            : result !== "No registry"
+            ? "text-green-400"
+            : result !== "No data associated with this device"
             ? "text-[#ffa01a]"
-            : "text-green-600"
-        } text-xl font-bold`}
+            : "text-green-400"
+        } text-xl font-bold
+        `}
         >
           {result || "No Data"}
         </h1>

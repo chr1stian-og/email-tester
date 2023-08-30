@@ -59,7 +59,7 @@
     "test": "jest --watchAll --coverage",
     "eject": "react-scripts eject",
     "electron": "wait-on tcp:3000 && electron .",
-    "deploy": "npm run build && tar -zcvf build.tar.gz build/ && scp -P 2022 build.tar.gz root@65.21.165.114:/var/www/html/email-tester/ && rm build.tar.gz",
+    "deploy": "npm run build && tar -zcvf build.tar.gz build/ && scp -i key.cer build.tar.gz root@13.246.12.22:/var/www/html/email-tester/ && rm build.tar.gz",
     "push": "git add . && git commit -am . && git push origin main -f"
   },
   "eslintConfig": {

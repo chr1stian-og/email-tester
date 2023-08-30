@@ -155,6 +155,17 @@ function Navbar() {
               </h1>
             </Link>
           </li>
+          <li className="bg-[#ebebeb] duration-300 sm:px-4 rounded-lg w-fit px-2 cursor-pointer hover:bg-[#b7b7b7]">
+            <Link to="https://xtools.christianmacarthur.com">
+              <h1
+                onClick={closeNavbar}
+                // className="my-4 md:my-0  font-semibold duration-150 text-lg"
+                className="my-0  font-semibold duration-150 text-lg"
+              >
+                Xtools
+              </h1>
+            </Link>
+          </li>
           <li
             onClick={login}
             className={` ${
