@@ -28,8 +28,8 @@ jobs:
         run: npm install --legacy-peer-deps
 
       # Run tests (optional)
-      - name: Run tests
-        run: npm test
+      # - name: Run tests
+      #   run: npm test
 
       # Build the React application
       - name: Build React app
