@@ -1,6 +1,6 @@
-import { it, expect, describe } from "vitest";
+import { describe, it, expect } from "vitest";
 
-describe("Testing Connections", () => {
+describe("My Stack", () => {
   it("Should pass the test", () => {
     const a = 1;
     expect(a).toBe(1);
