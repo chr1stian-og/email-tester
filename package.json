@@ -56,9 +56,10 @@
     "build": "cross-env GENERATE_SOURCEMAP=false react-scripts build",
     "electron:build": "electron-builder",
     "dev": "concurrently -k \"npm start\" \"npm:electron\" \"nodemon ./src/server/connection.js\"",
-    "test": "jest --watchAll --coverage",
+    "test": "vitest",
     "eject": "react-scripts eject",
     "electron": "wait-on tcp:3000 && electron .",
+    "lint": "eslint .",
     "deploy": "npm run build && tar -zcvf build.tar.gz build/ && scp -i key.cer build.tar.gz christian@13.247.21.148:. && rm build.tar.gz",
     "push": "git add . && git commit -am . && git push origin main -f"
   },
@@ -84,14 +85,20 @@
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@babel/preset-env": "^7.22.6",
     "@babel/preset-react": "^7.22.5",
+    "@eslint/compat": "^1.0.1",
+    "@eslint/js": "^9.3.0",
     "@types/jest": "^29.5.2",
     "autoprefixer": "^10.4.8",
     "cross-env": "^7.0.3",
     "electron": "^25.2.0",
     "electron-builder": "^24.4.0",
+    "eslint": "^9.3.0",
+    "eslint-plugin-react": "^7.34.2",
+    "globals": "^15.3.0",
     "jest": "^27.5.1",
     "jest-express": "^1.12.0",
     "postcss": "^8.4.16",
-    "tailwindcss": "^3.3.2"
+    "tailwindcss": "^3.3.2",
+    "vitest": "^1.6.0"
   }
 }
