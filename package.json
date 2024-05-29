@@ -52,14 +52,14 @@
     "winston": "^3.10.0"
   },
   "scripts": {
-    "start": "concurrently \"react-scripts start\" \"nodemon ./src/server/connection.js\" ",
+    "start": "concurrently \"cross-env PORT=3003 react-scripts start\" \"nodemon ./src/server/connection.js\" ",
     "build": "cross-env GENERATE_SOURCEMAP=false react-scripts build",
     "electron:build": "electron-builder",
     "dev": "concurrently -k \"npm start\" \"npm:electron\" \"nodemon ./src/server/connection.js\"",
     "test": "jest --watchAll --coverage",
     "eject": "react-scripts eject",
     "electron": "wait-on tcp:3000 && electron .",
-    "deploy": "npm run build && tar -zcvf build.tar.gz build/ && scp -i key.cer build.tar.gz root@13.246.12.22:/var/www/html/email-tester/ && rm build.tar.gz",
+    "deploy": "npm run build && tar -zcvf build.tar.gz build/ && scp -i key.cer build.tar.gz christian@13.247.21.148:. && rm build.tar.gz",
     "push": "git add . && git commit -am . && git push origin main -f"
   },
   "eslintConfig": {

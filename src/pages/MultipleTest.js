@@ -11,7 +11,6 @@ const gaEventTracker = GaEventTracker("Multiple Page");
 
 //main function
 function MultipleTest() {
-
   //States
   const [token, setToken] = useState("");
 
@@ -34,7 +33,7 @@ function MultipleTest() {
     width: window.innerWidth,
     height: window.innerHeight,
   });
-  
+
   const [result, setResult] = useState([]);
 
   const [abortController, setAbortController] = useState(null);
@@ -59,7 +58,7 @@ function MultipleTest() {
       callDialog("error", "Error while trying to login, try again");
     }
   };
-  
+
   let dialogTimeout;
 
   const callDialog = (type, message) => {

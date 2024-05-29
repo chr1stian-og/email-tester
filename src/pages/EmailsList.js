@@ -5,7 +5,7 @@ import axios from "axios";
 import { res } from "react-email-validator";
 
 // const api = axios.create({ baseURL: "http://localhost:3001" });
-const api = axios.create({ baseURL: "https://65.21.165.114:3001" });
+const api = axios.create({ baseURL: process.env.REACT_APP_REMOTE_API });
 const loading = require("../assets/loading.gif");
 
 function Login() {

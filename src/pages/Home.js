@@ -9,7 +9,7 @@ const currentYear = new Date().getFullYear();
 
 //Global variables
 const loading = require("../assets/loading.gif");
-const api = axios.create({ baseURL: process.env.REACT_APP_LOCAL_API });
+const api = axios.create({ baseURL: process.env.REACT_APP_REMOTE_API });
 const gaEventTracker = GaEventTracker("Home Page");
 let dialogTimeout;
 

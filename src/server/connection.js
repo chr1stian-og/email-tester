@@ -34,7 +34,7 @@ firebaseAuth.initializeApp({
 });
 
 const ALLOWED_ORIGIN = process.env.REACT_APP_LOCAL_API;
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 5005;
 
 let Imap = require("imap"),
   inspect = require("util").inspect;
@@ -66,7 +66,7 @@ app.use(
   })
 );
 
-//secure server
+// secure server
 // const ssl = {
 //   key: fs.readFileSync(
 //     "/etc/letsencrypt/live/christianmacarthur.com/privkey.pem"
@@ -476,7 +476,7 @@ app.post("/api/testEmail", async (req, res) => {
           res,
           200,
           "Invalid email",
-          result !== [""] ? result : ": User not found" || info.code
+          result !== "" ? result : ": User not found" || info.code
         );
       }
     });
@@ -527,7 +527,7 @@ app.post("/api/testEmailList", async (req, res) => {
           res,
           200,
           "Invalid email",
-          result !== [""] ? result : ": User not found" || info.code
+          result !== "" ? result : ": User not found" || info.code
         );
       }
     });
